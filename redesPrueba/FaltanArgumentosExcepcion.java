@@ -1,4 +1,4 @@
-public class FaltanArgumentosExcepcion extends RuntimeException {
+public class FaltanArgumentosExcepcion extends Exception {
     public FaltanArgumentosExcepcion(String message) {
         super(message);
     }
