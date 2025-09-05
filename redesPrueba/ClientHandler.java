@@ -23,17 +23,15 @@ public class ClientHandler extends Thread {
         }
         out.println(sb.toString());
     }
-
     private boolean checkWin(char s) {
         for (int i = 0; i < 3; i++) {
-            if (board[i][0] == s && board[i][1] == s && board[i][2] == s) return true;
+            if (board[i][0] == s && board[i][1] == s && board[i][2] == s) return true;//filas columnas
             if (board[0][i] == s && board[1][i] == s && board[2][i] == s) return true;
         }
-        if (board[0][0] == s && board[1][1] == s && board[2][2] == s) return true;
+        if (board[0][0] == s && board[1][1] == s && board[2][2] == s) return true;// diagonales
         if (board[0][2] == s && board[1][1] == s && board[2][0] == s) return true;
         return false;
     }
-
     private boolean boardFull() {
         for (char[] row : board) {
             for (char cell : row)
@@ -52,7 +50,7 @@ public class ClientHandler extends Thread {
             name = in.readLine();
             Server.clients.put(name, this);
             out.println("Registrado como " + name);
-
+            out.println("listar: Muestra usuarios conectados, invitar: invita jugador");
             String input;
             while ((input = in.readLine()) != null) {
                 if (input.equals("listar")) {
@@ -63,7 +61,7 @@ public class ClientHandler extends Thread {
                     }
                 } else if (input.startsWith("invitar ")) {
                     String target = input.split(" ")[1];
-                    ClientHandler invited = Server.clients.get(target);
+                    ClientHandler invited = Server.clients.get(target);// busca dentro del hash los clientes del server con key target que introducio el usuario
                     if (invited != null) {
                         invited.out.println(name + " quiere jugar tateti contigo. Escribe 'aceptar " + name + "' para comenzar.");
                         out.println("Invitación enviada a " + target);
@@ -90,7 +88,7 @@ public class ClientHandler extends Thread {
                         this.out.println("Partida iniciada. Vos sos O.");
 
                         inviter.sendBoard();
-                        inviter.out.println("Tu turno. Usá: jugar fila columna");
+                        inviter.out.println("Tu turno. Usá: jugar [fila] [columna]");
                     }
                 } else if (input.startsWith("jugar ")) {
                     if (board == null || opponent == null) {
@@ -103,12 +101,11 @@ public class ClientHandler extends Thread {
                     int col = Integer.parseInt(parts[2]);
 
                     if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ') {
-                        out.println("Movimiento inválido.");
+                        System.out.println("Hiciste un movimiento invalido");
                         continue;
-                    }
-
-                    board[row][col] = symbol;
-
+                    }                 
+                    
+                    else board[row][col] = symbol;
                     sendBoard();
                     opponent.sendBoard();
 
@@ -129,10 +126,15 @@ public class ClientHandler extends Thread {
             }
         } catch (IOException e) {
             System.out.println(name + " se desconectó.");
-        } finally {
+        } 
+        
+        finally {
             try {
                 socket.close();
-            } catch (IOException e) { }
+                
+            } catch (IOException e) {
+                    
+            }
             Server.clients.remove(name);
         }
     }
