@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class ClientHandler extends Thread {
+public class ClientHandler extends Thread {// me permite que la clase sea un thread me permite tener varios client handler al mismo tiempo
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
