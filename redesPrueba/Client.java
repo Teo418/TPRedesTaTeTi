@@ -25,8 +25,7 @@ public class Client {
         Thread lector = new Thread(() -> {
             String serverMsg;
             try {
-                serverMsg= mensajesEntrada.readLine();
-                while (serverMsg  != null) {
+                while ((serverMsg= mensajesEntrada.readLine())  != null) {
                     System.out.println(serverMsg);
                 }
             } catch (IOException e) {
@@ -34,8 +33,8 @@ public class Client {
             }
         });
         lector.start();
-        String input= teclado.readLine();
-        while (input  != null) {
+        String input;
+        while ((input= teclado.readLine())  != null) {
             mensajeSalida.println(input);
         }
     }}

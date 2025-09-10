@@ -66,15 +66,19 @@ public class ClientHandler extends Thread {// me permite que la clase sea un thr
             throw new FaltanArgumentosExcepcion("Debés especificar a quién invitar. Usá: invitar <usuario>");
         }
 
-        String target = parts[1];
+
+        String target = parts[1].trim().toLowerCase();
         ClientHandler invited = Server.clients.get(target);
 
-        if (invited != null) {
+        if (invited == null) {
+            out.println("Usuario no encontrado.");
+        } else if (target.equals(name.toLowerCase())) {
+            out.println("No te podes invitar a vos mismo");
+        } else {
             invited.out.println(name + " quiere jugar tateti contigo. Escribe 'aceptar " + name + "' para comenzar.");
             out.println("Invitación enviada a " + target);
-        } else {
-            out.println("Usuario no encontrado.");
         }
+
     }
     private boolean checkWin(char s) {
         for (int i = 0; i < 3; i++) {
@@ -152,8 +156,11 @@ public class ClientHandler extends Thread {// me permite que la clase sea un thr
             out = new PrintWriter(socket.getOutputStream(), true);
             out.println("Bienvenido! Ingrese su nombre:");
             name = in.readLine();
+            while(Server.clients.containsKey(name)){
+                out.println("Este nombre ya esta en uso, ingrese otro:");
+                name = in.readLine();
+            }
             Server.clients.put(name, this);
-            out.println("Registrado como " + name);
             String input;
             while ((input = in.readLine()) != null) {
                 try {
