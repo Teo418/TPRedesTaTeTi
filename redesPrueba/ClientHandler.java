@@ -152,17 +152,17 @@ public class ClientHandler extends Thread {// me permite que la clase sea un thr
 
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));// envia mensajes al cliente por el socket
+            out = new PrintWriter(socket.getOutputStream(), true);// recibe mensaje del cliente por el socket
             out.println("Bienvenido! Ingrese su nombre:");
             name = in.readLine();
-            while(Server.clients.containsKey(name)){
+            while(Server.clients.containsKey(name)){// verifica que el nombre no este en uso 
                 out.println("Este nombre ya esta en uso, ingrese otro:");
                 name = in.readLine();
             }
             Server.clients.put(name, this);
             String input;
-            while ((input = in.readLine()) != null) {
+            while ((input = in.readLine()) != null) {//bucle infinito para que lea lo que dice el cliente
                 try {
                     handleCommand(input);
                 } catch (FaltanArgumentosExcepcion | ComandoInvalidoException | MovimientoInvalidoException e) {
@@ -170,9 +170,9 @@ public class ClientHandler extends Thread {// me permite que la clase sea un thr
                 }
             }
         } catch (IOException e) {
-            System.out.println(name + " se desconectó.");
+            System.out.println(name + " se desconectó.");// si el cliente se desconecta tira excepcion
         } finally {
-            try { socket.close(); } catch (IOException e) {}
+            try { socket.close(); } catch (IOException e) {}// cierra el socket
             Server.clients.remove(name);
         }
     }
