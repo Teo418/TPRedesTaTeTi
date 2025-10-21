@@ -1,5 +1,6 @@
 import Excepciones.ComandoInvalidoException;
 import Excepciones.FaltanArgumentosExcepcion;
+import java.util.List;
 
 public class Comando {
     private ClientHandler client;
@@ -10,18 +11,22 @@ public class Comando {
         this.controladorJuego = new Juego();
     }
 
-    public void process(String input) {
+    public void process(Mensaje Mensaje) {
+        String comandoRaiz = Mensaje.getComandoRaiz();
+
+        // Futuro: Verificar la firma aquí antes de procesar
+
         try {
-            if (input.equals("listar")) {
+            if (comandoRaiz.equals("listar")) {
                 listUsers();
-            } else if (input.startsWith("invitar ")) {
-                invite(input);
-            } else if (input.startsWith("aceptar ")) {
-                accept(input);
-            } else if (input.startsWith("jugar ")) {
-                play(input);
+            } else if (comandoRaiz.equals("invitar")) {
+                invite(Mensaje); // Pasamos el objeto completo
+            } else if (comandoRaiz.equals("aceptar")) {
+                accept(Mensaje); // Pasamos el objeto completo
+            } else if (comandoRaiz.equals("jugar")) {
+                play(Mensaje); // Pasamos el objeto completo
             } else {
-                throw new ComandoInvalidoException("Comando desconocido: " + input);
+                throw new ComandoInvalidoException("Comando desconocido: " + comandoRaiz);
             }
         } catch (Exception e) {
             client.getOut().println("Error: " + e.getMessage());
@@ -35,19 +40,17 @@ public class Comando {
         }
     }
 
-    private void invite(String input) throws FaltanArgumentosExcepcion {
-        String target = parseTarget(input);
+    // *** MODIFICACIÓN A invite: Recibe Mensaje ***
+    private void invite(Mensaje Mensaje) throws FaltanArgumentosExcepcion {
+        List<String> args = Mensaje.getArgumentos();
+        if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: invitar <usuario>");
+
+        String target = args.get(0).trim().toLowerCase(); // El primer argumento es el target
         ClientHandler invited = encontrarCliente(target);
 
         if (!chequearInvitacion(target, invited)) return;
 
         enviarInvitacion(invited, target);
-    }
-    private String parseTarget(String input) throws FaltanArgumentosExcepcion {
-        String[] parts = input.split(" ");
-        if (parts.length < 2)
-            throw new FaltanArgumentosExcepcion("Usá: invitar <usuario>");
-        return parts[1].trim().toLowerCase();
     }
 
     private ClientHandler encontrarCliente(String target) {
@@ -71,19 +74,35 @@ public class Comando {
         client.getOut().println("Invitación enviada a " + target);
     }
 
+    // *** MODIFICACIÓN A accept: Recibe Mensaje ***
+    private void accept(Mensaje Mensaje) throws FaltanArgumentosExcepcion {
+        List<String> args = Mensaje.getArgumentos();
+        if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: aceptar <usuario>");
 
-    private void accept(String input) throws FaltanArgumentosExcepcion {
-        String[] parts = input.split(" ");
-        if (parts.length < 2) throw new FaltanArgumentosExcepcion("Usá: aceptar <usuario>");
-
-        String inviterName = parts[1];
+        String inviterName = args.get(0);
         ClientHandler inviter = Server.clients.get(inviterName);
         if (inviter == null) throw new FaltanArgumentosExcepcion("El usuario no está disponible.");
 
         controladorJuego.startGame(inviter, client);
     }
 
-    private void play(String input) throws Exception {
-        controladorJuego.makeMove(client, input);
+    // *** MODIFICACIÓN A play: Recibe Mensaje ***
+    private void play(Mensaje Mensaje) throws Exception {
+        // Enviar el comando completo original ("jugar fila columna") a makeMove
+        // o, mejor aún, pasar los argumentos de forma estructurada.
+
+        // Opción 1: Reconstruir el input String para no cambiar Juego.java (más fácil por ahora)
+        // String input = "jugar " + Mensaje.getArgumentos().get(0) + " " + Mensaje.getArgumentos().get(1);
+        // controladorJuego.makeMove(client, input);
+
+        // Opción 2: Pasar los argumentos y modificar Juego.makeMove (MEJOR DISEÑO)
+        List<String> args = Mensaje.getArgumentos();
+        if (args.size() < 2) throw new FaltanArgumentosExcepcion("Usá: jugar fila columna");
+
+        int row = Integer.parseInt(args.get(0));
+        int col = Integer.parseInt(args.get(1));
+
+        // Asumimos que vas a modificar Juego.makeMove para recibir argumentos estructurados
+        controladorJuego.makeMove(client, row, col);
     }
 }

@@ -35,8 +35,8 @@ public class Client {
         lector.start();
         String input;
         while ((input= teclado.readLine())  != null) {
-            mensajeSalida.println(input);
-        }
+            Mensaje mensajeAEnviar = Mensaje.crearMensaje(input);
+            mensajeSalida.println(mensajeAEnviar.toString());        }
     }}
 
 /*public void run() {
