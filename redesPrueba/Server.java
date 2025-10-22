@@ -10,8 +10,11 @@ public class Server {
         System.out.println("Servidor iniciado en puerto 5000...");
 
         while (true) {
-            Socket socket = serverSocket.accept();// esto es un metodo bloqueante que me ayuda a esperar a que se conecta un cliente por eso el while(true), porque sino podria hacer solo una conexion
-            ClientHandler handler = new ClientHandler(socket);// por cada cliente hago un client handler y inicio el thread
+            Socket socket = serverSocket.accept();// esto es un metodo bloqueante que me ayuda a
+            // esperar a que se conecta un cliente por eso el while(true),
+            // porque sino podria hacer solo una conexion
+            ClientHandler handler = new ClientHandler(socket);// por cada cliente hago un
+            // client handler y inicio el thread
             handler.start();// inicio el thread de cada cliente y le paso el socket
         }
     }
