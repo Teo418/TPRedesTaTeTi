@@ -6,7 +6,11 @@ public class Server {
     static Map<String, ClientHandler> clients = Collections.synchronizedMap(new HashMap<>());
     //me permite "bloquear el hasmap", me sirve para modificar la info del hash con un cliente, es decir que no haya dos cliente modificando la info al mismo tiempo sino se puede corromper el codigo(chat gpt)
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(5000);
+        if(args.length < 1){
+            System.out.println("No se ingreso un puerto (java Server <puerto>)");
+            return;
+        }
+        ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]));
         System.out.println("Servidor iniciado en puerto 5000...");
 
         while (true) {

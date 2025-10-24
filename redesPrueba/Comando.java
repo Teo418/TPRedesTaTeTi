@@ -40,46 +40,46 @@ public class Comando {
         }
     }
 
-    // *** MODIFICACIÓN A invite: Recibe Mensaje ***
-    private void invite(Mensaje Mensaje) throws FaltanArgumentosExcepcion {
-        List<String> args = Mensaje.getArgumentos();
+    // *** MODIFICACIÓN A invite: Recibe mensaje ***
+    private void invite(Mensaje mensaje) throws FaltanArgumentosExcepcion {
+        List<String> args = mensaje.getArgumentos();
         if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: invitar <usuario>");
 
-        String target = args.get(0).trim().toLowerCase(); // El primer argumento es el target
-        ClientHandler invited = encontrarCliente(target);
+        String oponente = args.getFirst().trim().toLowerCase(); // El primer argumento es el oponente
+        ClientHandler invited = encontrarCliente(oponente);
 
-        if (!chequearInvitacion(target, invited)) return;
+        if (!chequearInvitacion(oponente, invited)) return;
 
-        enviarInvitacion(invited, target);
+        enviarInvitacion(invited, oponente);
     }
 
-    private ClientHandler encontrarCliente(String target) {
-        return Server.clients.get(target);
+    private ClientHandler encontrarCliente(String oponente) {
+        return Server.clients.get(oponente);
     }
 
-    private boolean chequearInvitacion(String target, ClientHandler invited) {
+    private boolean chequearInvitacion(String oponente, ClientHandler invited) {
         if (invited == null) {
             client.getOut().println("Usuario no encontrado.");
             return false;
         }
-        if (target.equals(client.getName().toLowerCase())) {
+        if (oponente.equals(client.getName().toLowerCase())) {
             client.getOut().println("No te podés invitar a vos mismo.");
             return false;
         }
         return true;
     }
 
-    private void enviarInvitacion(ClientHandler invited, String target) {
+    private void enviarInvitacion(ClientHandler invited, String oponente) {
         invited.getOut().println(client.getName() + " quiere jugar. Escribí 'aceptar " + client.getName() + "' para empezar.");
-        client.getOut().println("Invitación enviada a " + target);
+        client.getOut().println("Invitación enviada a " + oponente);
     }
 
-    // *** MODIFICACIÓN A accept: Recibe Mensaje ***
-    private void accept(Mensaje Mensaje) throws FaltanArgumentosExcepcion {
-        List<String> args = Mensaje.getArgumentos();
+    // *** MODIFICACIÓN A accept: Recibe mensaje ***
+    private void accept(Mensaje mensaje) throws FaltanArgumentosExcepcion {
+        List<String> args = mensaje.getArgumentos();
         if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: aceptar <usuario>");
 
-        String inviterName = args.get(0);
+        String inviterName = args.getFirst();
         ClientHandler inviter = Server.clients.get(inviterName);
         if (inviter == null) throw new FaltanArgumentosExcepcion("El usuario no está disponible.");
 
@@ -87,7 +87,7 @@ public class Comando {
     }
 
     // *** MODIFICACIÓN A play: Recibe Mensaje ***
-    private void play(Mensaje Mensaje) throws Exception {
+    private void play(Mensaje mensaje) throws Exception {
         // Enviar el comando completo original ("jugar fila columna") a makeMove
         // o, mejor aún, pasar los argumentos de forma estructurada.
 
@@ -96,13 +96,13 @@ public class Comando {
         // controladorJuego.makeMove(client, input);
 
         // Opción 2: Pasar los argumentos y modificar Juego.makeMove (MEJOR DISEÑO)
-        List<String> args = Mensaje.getArgumentos();
+        List<String> args = mensaje.getArgumentos();
         if (args.size() < 2) throw new FaltanArgumentosExcepcion("Usá: jugar fila columna");
 
         int row = Integer.parseInt(args.get(0));
         int col = Integer.parseInt(args.get(1));
 
         // Asumimos que vas a modificar Juego.makeMove para recibir argumentos estructurados
-        controladorJuego.makeMove(client, row, col);
+        controladorJuego.makeMove(client, mensaje);
     }
 }

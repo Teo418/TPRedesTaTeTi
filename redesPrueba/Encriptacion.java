@@ -4,12 +4,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 
-/**
- * Gestiona toda la criptografía del sistema:
- * - RSA para intercambio de claves
- * - AES-GCM para cifrado simétrico de mensajes
- * - HMAC-SHA256 para integridad adicional
- */
 public class Encriptacion {
     private static final String RSA_ALGORITHM = "RSA";
     private static final String AES_ALGORITHM = "AES";
@@ -30,16 +24,12 @@ public class Encriptacion {
         generateRSAKeyPair();
     }
 
-
     private void generateRSAKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(RSA_ALGORITHM);
         keyGen.initialize(RSA_KEY_SIZE);
         this.clavePublicaPrivada = keyGen.generateKeyPair();
     }
 
-    /**
-     * Genera una clave simétrica AES aleatoria
-     */
     public void generateAESKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance(AES_ALGORITHM);
         keyGen.init(AES_KEY_SIZE);
@@ -49,9 +39,7 @@ public class Encriptacion {
         generateHMACKey();
     }
 
-    /**
-     * Genera clave HMAC para verificación de integridad
-     */
+
     private void generateHMACKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance(HMAC_ALGORITHM);
         keyGen.init(256);
@@ -181,9 +169,7 @@ public class Encriptacion {
         return MessageDigest.isEqual(calculatedHmac, hmac);
     }
 
-    /**
-     * Firma datos con la clave privada RSA
-     */
+    // genera firma encriptando con la privada (RSA)
     public byte[] signData(byte[] data) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(clavePublicaPrivada.getPrivate());

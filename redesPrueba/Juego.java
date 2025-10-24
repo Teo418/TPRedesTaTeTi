@@ -1,6 +1,7 @@
 import Excepciones.MovimientoInvalidoException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Juego {
@@ -10,9 +11,9 @@ public class Juego {
         sessions.put(player1, session);
         sessions.put(player2, session);
     }
-    public void makeMove(ClientHandler player, String input) throws Exception {
+    public void makeMove(ClientHandler player, List<String> argumentos) throws Exception {
         Sesion session = sessions.get(player);
         if (session == null) throw new MovimientoInvalidoException("No estás en una partida.");
-        session.playMove(player, input);
+        session.playMove(player, argumentos);
     }
 }

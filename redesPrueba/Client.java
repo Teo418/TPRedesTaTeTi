@@ -1,9 +1,6 @@
 import java.io.*;
 import java.net.*;
 
-import java.io.*;
-import java.net.*;
-
 public class Client {
     private static BufferedReader teclado;//para leer lo que el usuario escribe
     private static String ip;
@@ -26,7 +23,8 @@ public class Client {
             String serverMsg;
             try {
                 while ((serverMsg= mensajesEntrada.readLine())  != null) {
-                    System.out.println(serverMsg);
+                    Mensaje mensajeRecibido = Mensaje.crearMensaje(serverMsg);
+                    System.out.println(mensajeRecibido.toString());
                 }
             } catch (IOException e) {
                 System.out.println("Conexión cerrada.");

@@ -7,7 +7,6 @@ public class ClientHandler extends Thread {
     private PrintWriter out;
     private String name;
 
-
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
@@ -17,23 +16,19 @@ public class ClientHandler extends Thread {
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-
             out.println("Bienvenido! Ingrese su nombre:");
             name = in.readLine();
-
             while (Server.clients.containsKey(name)) {
                 out.println("Este nombre ya está en uso, ingrese otro:");
                 name = in.readLine();
             }
-
             Server.clients.put(name, this);
             Comando commandProcessor = new Comando(this);
-
             String input;
             while ((input = in.readLine()) != null) {
-                commandProcessor.process(input);
+                Mensaje mensaje = Mensaje.crearMensaje(input);
+                commandProcessor.process(mensaje);
             }
-
         } catch (IOException e) {
             System.out.println(name + " se desconectó.");
         } finally {

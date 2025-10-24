@@ -2,6 +2,7 @@ import Excepciones.FaltanArgumentosExcepcion;
 import Excepciones.MovimientoInvalidoException;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class Sesion {
     private char[][] board = new char[3][3];
@@ -20,48 +21,6 @@ public class Sesion {
         playerX.getOut().println("Tu turno. Usá: jugar fila columna");
     }
 
-    public void playMove(ClientHandler player, String input) throws Exception {
-        String[] parts = input.split(" ");
-        if (parts.length < 3) throw new FaltanArgumentosExcepcion("Usá: jugar fila columna");
-
-        int row = Integer.parseInt(parts[1]);
-        int col = Integer.parseInt(parts[2]);
-
-        char symbol = (player == playerX) ? 'X' : 'O';
-        if (symbol != currentTurn) {
-            player.getOut().println("No es tu turno.");
-            return;
-        }
-
-        if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ')
-            throw new MovimientoInvalidoException("Movimiento inválido.");
-
-        board[row][col] = symbol;
-        sendBoard();
-
-        if (checkWin(symbol)) {
-            player.getOut().println("¡Ganaste!");
-            getOpponent(player).getOut().println("Perdiste :(");
-            return;
-        }
-
-        if (boardFull()) {
-            playerX.getOut().println("Empate.");
-            playerO.getOut().println("Empate.");
-            return;
-        }
-
-        currentTurn = (currentTurn == 'X') ? 'O' : 'X';
-        getOpponent(player).getOut().println("Tu turno. Usá: jugar fila columna");
-    }
-
-    private void sendBoard() {
-        StringBuilder sb = new StringBuilder("\n");
-        for (int i = 0; i < 3; i++) sb.append(Arrays.toString(board[i])).append("\n");
-        playerX.getOut().println(sb.toString());
-        playerO.getOut().println(sb.toString());
-    }
-
     private boolean checkWin(char s) {
         for (int i = 0; i < 3; i++) {
             if (board[i][0] == s && board[i][1] == s && board[i][2] == s) return true;
@@ -76,6 +35,50 @@ public class Sesion {
             for (char cell : row)
                 if (cell == ' ') return false;
         return true;
+    }
+    public boolean checkBoard(ClientHandler player){
+        char symbol = (player == playerX) ? 'X' : 'O';
+        if (checkWin(symbol)) {
+            player.getOut().println("¡Ganaste!");
+            getOpponent(player).getOut().println("Perdiste :(");
+            return true;
+        }
+        else if (boardFull()) {
+                playerX.getOut().println("Empate.");
+                playerO.getOut().println("Empate.");
+                return true;
+        }
+        return false;
+    }
+    private void sendBoard() {
+        StringBuilder sb = new StringBuilder("\n");
+        for (int i = 0; i < 3; i++) sb.append(Arrays.toString(board[i])).append("\n");
+        playerX.getOut().println(sb.toString());
+        playerO.getOut().println(sb.toString());
+    }
+
+    public void playMove(ClientHandler player, List<String> argumentos) throws Exception {
+        if (argumentos.size() < 3) throw new FaltanArgumentosExcepcion("Usá: jugar fila columna");
+
+        int row = Integer.parseInt(argumentos.get(1));
+        int col = Integer.parseInt(argumentos.get(2));
+
+        char symbol = (player == playerX) ? 'X' : 'O';
+        if (symbol != currentTurn) {
+            player.getOut().println("No es tu turno.");
+            return;
+        }
+
+        if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ') {
+            throw new MovimientoInvalidoException("Movimiento inválido.");
+        }
+        sendBoard();
+        if(checkBoard(player)){ // si devuelve true, gano o empato, por lo tanto se termina el juego
+            return;
+        }
+        board[row][col] = symbol;
+        currentTurn = (currentTurn == 'X') ? 'O' : 'X';
+        getOpponent(player).getOut().println("Tu turno. Usá: jugar fila columna");
     }
 
     private ClientHandler getOpponent(ClientHandler player) {
