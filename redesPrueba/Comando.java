@@ -103,6 +103,6 @@ public class Comando {
         int col = Integer.parseInt(args.get(1));
 
         // Asumimos que vas a modificar Juego.makeMove para recibir argumentos estructurados
-        controladorJuego.makeMove(client, mensaje);
+        controladorJuego.makeMove(client, mensaje.getArgumentos());
     }
 }
