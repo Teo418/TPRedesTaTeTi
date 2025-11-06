@@ -58,6 +58,7 @@ public class Mensaje {
         byte[] contenidoBytes = contenido.getBytes("UTF-8");
         return encriptacion.verifySignature(contenidoBytes, this.firma, clavePublicaEmisor);
     }
+
     // Para enviar el objeto serializado como un String (comando + args ||| firma)
     @Override
     public String toString() {
@@ -68,5 +69,9 @@ public class Mensaje {
             }
         }
         return comandoConArgs + "|||";
+    }
+
+    public byte[] getBytes(){
+        return this.toString().getBytes();
     }
 }

@@ -24,7 +24,7 @@ public class CanalSeguro {
         byte[] miPublica = crypto.getPublicKeyBytes();
         outputWriter.println("PUBKEY:" + miPublica.toString());
     }
-    public String getClaveAsimetrica(){
+    public String getClaveEntrante(){
         try {
             return inputReader.readLine();
         } catch (IOException e) {
@@ -32,9 +32,25 @@ public class CanalSeguro {
         }
         return null;
     }
-    public byte[] desencriptarClaveAsimetrica(byte[] claveAsimetricaEncriptada){
+    public byte[] desencriptarConClaveAsimetrica(byte[] bytesParaDesencriptar){
         try {
-            return crypto.decryptWithRSA(claveAsimetricaEncriptada);
+            return crypto.desencriptarConPrivada(bytesParaDesencriptar);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+    public byte[] encriptarMensajeConSimetrica(Mensaje mensaje){
+        try {
+            return this.crypto.encryptWithAES(mensaje.getBytes());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());;
+        }
+        return null;
+    }
+    public byte[] desencriptarMensajeConAsimetrica(Mensaje mensaje){
+        try {
+            return crypto.decryptWithAES(mensaje.getBytes());
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -51,19 +67,19 @@ public class CanalSeguro {
         if (lineaCliente == null || !lineaCliente.startsWith("PUBKEY:")) {
             throw new SecurityException("Esperaba PUBKEY del cliente o es nula");
         }
-        clavePublicaRemota = lineaCliente.getBytes("UTF-8");
+        this.clavePublicaRemota = lineaCliente.getBytes("UTF-8");
         System.out.println("[CanalSeguro] ✓ Clave pública del cliente recibida");
 
         enviarClavePublica();
         System.out.println("[CanalSeguro] ✓ Clave pública enviada");
 
-        String lineaAES = getClaveAsimetrica();
+        String lineaAES = getClaveEntrante(); // aca se recibe la clave simetrica encriptada por la pública mia
         if (lineaAES == null || !lineaAES.startsWith("AESKEY:")) {
             throw new SecurityException("Esperaba AESKEY");
         }
         byte[] aesKeyCifrada = lineaAES.getBytes();
 
-        byte[] aesKey = desencriptarClaveAsimetrica(aesKeyCifrada);
+        byte[] aesKey = desencriptarConClaveAsimetrica(aesKeyCifrada);
         crypto.setAESKey(aesKey);
         System.out.println("[CanalSeguro] ✓ Clave AES establecida");
         confirmacion();

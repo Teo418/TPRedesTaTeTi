@@ -74,7 +74,7 @@ public class Encriptacion {
     /**
      * Cifra datos con RSA usando la clave pública proporcionada
      */
-    public byte[] encryptWithRSA(byte[] data, byte[] publicKeyBytes)
+    public byte[] encriptarConPublica(byte[] data, byte[] publicKeyBytes)
             throws Exception {
         KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
@@ -84,11 +84,20 @@ public class Encriptacion {
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         return cipher.doFinal(data);
     }
+    public byte[] encriptarConPrivada(byte[] data, byte[] privateKeyBytes)
+        throws Exception {
+            KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(privateKeyBytes);
+            PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
+            Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
+            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+            return cipher.doFinal(data);
+    }
     /**
      * Descifra datos con RSA usando la clave privada propia
      */
-    public byte[] decryptWithRSA(byte[] encryptedData) throws Exception {
+    public byte[] desencriptarConPrivada(byte[] encryptedData) throws Exception {
         Cipher cipher = Cipher.getInstance(RSA_TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, clavePublicaPrivada.getPrivate());
         return cipher.doFinal(encryptedData);
@@ -113,7 +122,6 @@ public class Encriptacion {
         GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
         cipher.init(Cipher.ENCRYPT_MODE, aesKey, spec);
 
-        // Ciframos
         byte[] ciphertext = cipher.doFinal(plaintext);
 
         // Concatenamos: IV + Ciphertext (que ya incluye el tag GCM)
