@@ -1,13 +1,13 @@
 import java.io.*;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 
 public class Client {
     private static BufferedReader teclado;//para leer lo que el usuario escribe
     private static String ip;
     private static int puerto;
     private static Socket socket;//conexión con el servidor
-    private static BufferedReader mensajesEntrada;//para leer mensajes del servidor
-    private static PrintWriter mensajeSalida;//para enviar mensajes al servidor
+    private static CanalSeguro canalSeguro;
 
     public static void main(String[] args) throws IOException {
         teclado = new BufferedReader(new InputStreamReader(System.in));
@@ -16,26 +16,39 @@ public class Client {
         System.out.print("Puerto: ");
         puerto = Integer.parseInt(teclado.readLine());//para poder pasar a ints
         socket = new Socket(ip, puerto);
-        mensajesEntrada = new BufferedReader(new InputStreamReader(socket.getInputStream()));//por aca puedo recibir los mensajes del server
-        mensajeSalida = new PrintWriter(socket.getOutputStream(), true);// con esto los muestro
-        // auto flush me permite que los mensajes se envien en el momento y borra la "cache"
+        try {
+            canalSeguro = new CanalSeguro(socket.getInputStream(), socket.getOutputStream());
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            canalSeguro.handshakeCliente();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());;
+        }
         Thread lector = new Thread(() -> {
-            String serverMsg;
             try {
-                while ((serverMsg= mensajesEntrada.readLine())  != null) {
-                    Mensaje mensajeRecibido = Mensaje.crearMensaje(serverMsg);
-                    System.out.println(mensajeRecibido.toString());
+                Mensaje mensajeRecibido;
+                while ((mensajeRecibido = canalSeguro.recibirMensaje())  != null) {
+                    System.out.println("Mensaje entrante: " + mensajeRecibido.toString());
                 }
-            } catch (IOException e) {
-                System.out.println("Conexión cerrada.");
+            } catch (Exception e) {
+                System.out.println(e.getMessage() + "<<<>>> Conexión cerrada");
             }
         });
         lector.start();
+
         String input;
         while ((input= teclado.readLine())  != null) {
             Mensaje mensajeAEnviar = Mensaje.crearMensaje(input);
-            mensajeSalida.println(mensajeAEnviar.toString());        }
-    }}
+            try {
+                canalSeguro.enviarMensaje(mensajeAEnviar);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+}
 
 /*public void run() {
         String serverMsg;

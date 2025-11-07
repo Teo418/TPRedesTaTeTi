@@ -10,16 +10,19 @@ public class Server {
             System.out.println("No se ingreso un puerto (java Server <puerto>)");
             return;
         }
-        ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]));
-        System.out.println("Servidor iniciado en puerto 5000...");
-
-        while (true) {
-            Socket socket = serverSocket.accept();// esto es un metodo bloqueante que me ayuda a
-            // esperar a que se conecta un cliente por eso el while(true),
-            // porque sino podria hacer solo una conexion
-            ClientHandler handler = new ClientHandler(socket);// por cada cliente hago un
-            // client handler y inicio el thread
-            handler.start();// inicio el thread de cada cliente y le paso el socket
+        try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]))){
+            System.out.println("Servidor iniciado en puerto 5000...");
+            while (true) {
+                Socket socket = serverSocket.accept();// esto es un metodo bloqueante que me ayuda a
+                // esperar a que se conecta un cliente por eso el while(true),
+                // porque sino podria hacer solo una conexion
+                ClientHandler handler = new ClientHandler(socket);// por cada cliente hago un
+                // client handler y inicio el thread
+                handler.start();// inicio el thread de cada cliente y le paso el socket
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
+
     }
 }

@@ -14,22 +14,23 @@ public class ClientHandler extends Thread {
     @Override
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
-            out.println("Bienvenido! Ingrese su nombre:");
-            name = in.readLine();
+            CanalSeguro canalSeguro = new CanalSeguro(this.socket.getInputStream(), this.socket.getOutputStream());
+            canalSeguro.handshakeServidor();
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.out.println("Bienvenido! Ingrese su nombre:");
+            this.name = in.readLine();
             while (Server.clients.containsKey(name)) {
-                out.println("Este nombre ya está en uso, ingrese otro:");
-                name = in.readLine();
+                this.out.println("Este nombre ya está en uso, ingrese otro:");
+                this.name = this.in.readLine();
             }
             Server.clients.put(name, this);
             Comando commandProcessor = new Comando(this);
-            String input;
-            while ((input = in.readLine()) != null) {
-                Mensaje mensaje = Mensaje.crearMensaje(input);
+            Mensaje mensaje;
+            while ((mensaje = canalSeguro.recibirMensaje()) != null) {
                 commandProcessor.process(mensaje);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println(name + " se desconectó.");
         } finally {
             try { socket.close(); } catch (IOException ignored) {}

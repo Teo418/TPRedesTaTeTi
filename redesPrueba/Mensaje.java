@@ -26,6 +26,15 @@ public class Mensaje {
     public void setArgumentos(List<String> argumentos) {
         this.argumentos = argumentos;
     }
+
+    public byte[] getFirma() {
+        return firma;
+    }
+
+    public void setFirma(byte[] firma) {
+        this.firma = firma;
+    }
+
     public String getContenidoMensaje(){
         StringBuilder sb = new StringBuilder(this.comandoRaiz);
         if(this.argumentos != null && !this.argumentos.isEmpty()){
@@ -38,7 +47,15 @@ public class Mensaje {
     public void firmar(Encriptacion encriptacion) throws Exception{
         String mensaje = getContenidoMensaje();
         byte[] mensajeBytes = mensaje.getBytes("UTF-8");
-        this.firma = encriptacion.signData(mensajeBytes);
+        this.firma = encriptacion.firmar(mensajeBytes);
+    }
+    public boolean verificarFirma(byte[] clavePublicaEmisor, Encriptacion encriptacion) throws Exception{
+        if(this.firma == null){
+            throw new Exception("Error, el mensaje no tiene firma");
+        }
+        String contenido = getContenidoMensaje();
+        byte[] contenidoBytes = contenido.getBytes("UTF-8");
+        return encriptacion.verificarFirma(contenidoBytes, this.firma, clavePublicaEmisor);
     }
     public static Mensaje crearMensaje(String input) {
         String[] parts = input.trim().split(" ");
@@ -50,15 +67,6 @@ public class Mensaje {
 
         return new Mensaje(comandoRaiz, argumentos);
     }
-    public boolean verificarFirma(byte[] clavePublicaEmisor, Encriptacion encriptacion) throws Exception{
-        if(this.firma == null){
-            throw new Exception("Error, el mensaje no tiene firma");
-        }
-        String contenido = getContenidoMensaje();
-        byte[] contenidoBytes = contenido.getBytes("UTF-8");
-        return encriptacion.verifySignature(contenidoBytes, this.firma, clavePublicaEmisor);
-    }
-
     // Para enviar el objeto serializado como un String (comando + args ||| firma)
     @Override
     public String toString() {
