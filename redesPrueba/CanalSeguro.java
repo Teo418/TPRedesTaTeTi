@@ -24,17 +24,17 @@ public class CanalSeguro {
             throw new IOException("Error de entrada/salida de datos");
         }
     }
-    public byte[] getDatosEntrantes(){
-        try {
-            int length = this.dataIn.readInt();
-            byte[] data = new byte[length];
-            this.dataIn.readFully(data);
-            return data;
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+    public byte[] getDatosEntrantes() throws IOException {
+        int length = dataIn.readInt();
+        if (length <= 0 || length > 65536) {
+            throw new IOException("Longitud de datos inválida: " + length);
         }
-        return null;
+
+        byte[] data = new byte[length];
+        dataIn.readFully(data);
+        return data;
     }
+
     public byte[] encriptarConSimetrica(byte[] bytesParaDesencriptar){
         try {
             return this.crypto.encriptarConSimetrica(bytesParaDesencriptar);
@@ -59,70 +59,53 @@ public class CanalSeguro {
         }
         return null;
     }
-    public void confirmacion(){
-        try {
-            this.dataOut.write("READY".getBytes());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());;
-        }
+    public void confirmacion() throws IOException{
+        enviarDatos("READY".getBytes());
     }
 
     public void handshakeServidor() throws Exception {
         System.out.println("[CanalSeguro] Handshake servidor...");
 
         this.clavePublicaRemota = getDatosEntrantes();
-        if (clavePublicaRemota == null || clavePublicaRemota.length == 0)
-            throw new SecurityException("Clave pública del cliente inválida.");
         System.out.println("[CanalSeguro] ✓ Clave pública del cliente recibida");
-        byte[] miPublica = crypto.getPublicKeyBytes();
-        if (miPublica == null || miPublica.length == 0)
-            throw new IllegalStateException("Clave pública propia no está inicializada.");
+
         enviarDatos(crypto.getPublicKeyBytes());
         System.out.println("[CanalSeguro] ✓ Clave pública enviada al cliente");
 
         byte[] aesKeyCifrada = getDatosEntrantes();
-        if (aesKeyCifrada == null || aesKeyCifrada.length == 0)
-            throw new SecurityException("Clave AES cifrada inválida.");
         byte[] aesKey = desencriptarConPrivada(aesKeyCifrada);
-        if (aesKey == null || aesKey.length == 0)
-            throw new SecurityException("Fallo al descifrar clave AES.");
         crypto.setAESKey(aesKey);
         System.out.println("[CanalSeguro] ✓ Clave AES establecida");
+
         confirmacion();
         handshakeCompleted = true;
+
         System.out.println("[CanalSeguro] ✓ Handshake servidor completado");
     }
+
 
     public void handshakeCliente() throws Exception {
         System.out.println("[CanalSeguro] Handshake cliente...");
 
-        byte[] miPublica = crypto.getPublicKeyBytes();
-        if (miPublica == null || miPublica.length == 0)
-            throw new IllegalStateException("Clave pública propia no está inicializada.");
-        enviarDatos(miPublica);
+        enviarDatos(crypto.getPublicKeyBytes());
         System.out.println("[CanalSeguro] ✓ Clave pública enviada");
 
         this.clavePublicaRemota = getDatosEntrantes();
-        if (clavePublicaRemota == null || clavePublicaRemota.length == 0)
-            throw new SecurityException("Clave pública del servidor inválida.");
         System.out.println("[CanalSeguro] ✓ Clave pública del servidor recibida");
 
         crypto.generateAESKey();
-        byte[] aesKey = crypto.getAESKeyBytes();
-        if (aesKey == null || aesKey.length == 0)
-            throw new IllegalStateException("Clave AES no generada correctamente.");
-
-        byte[] aesKeyCifrada = crypto.encriptarConPublicaDelReceptor(aesKey, clavePublicaRemota);
+        byte[] aesKeyCifrada = crypto.encriptarConPublicaDelReceptor(crypto.getAESKeyBytes(), clavePublicaRemota);
         enviarDatos(aesKeyCifrada);
         System.out.println("[CanalSeguro] ✓ Clave AES enviada cifrada");
 
         byte[] confirm = getDatosEntrantes();
         if (!new String(confirm).equals("READY"))
-            throw new SecurityException("No se recibió confirmación READY.");
+            throw new SecurityException("No se recibió READY");
 
         handshakeCompleted = true;
         System.out.println("[CanalSeguro] ✓ Handshake cliente completado");
     }
+
 
     public void enviarMensaje(Mensaje mensaje) throws Exception{
         if (!this.handshakeCompleted){
