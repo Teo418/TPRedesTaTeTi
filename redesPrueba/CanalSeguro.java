@@ -107,52 +107,81 @@ public class CanalSeguro {
     }
 
 
-    public void enviarMensaje(Mensaje mensaje) throws Exception{
-        if (!this.handshakeCompleted){
-            throw new IllegalStateException("Error, no se realizo el handshake");
+    public void enviarMensaje(Mensaje mensaje) throws Exception {
+        if (!this.handshakeCompleted) {
+            throw new IllegalStateException("Error: no se realizó el handshake.");
         }
-        mensaje.firmar(this.crypto);
-        byte[] firma = mensaje.getFirma();
-        if (firma == null || firma.length == 0) throw new IllegalStateException("Firma no generada.");
 
+        // 1) Obtener contenido
         String contenido = mensaje.getContenidoMensaje();
-        byte[] contenidoBytes = contenido.getBytes("UTF-8");
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeInt(firma.length);
-        dos.write(firma);
-        dos.write(contenidoBytes);
-        dos.flush();
-        byte[] paquetePlano = baos.toByteArray();
-
-        byte[] mensajeEncriptado = encriptarConSimetrica(mensaje.getBytes());
-
-        enviarDatos(mensajeEncriptado);
-    }
-    public Mensaje recibirMensaje() throws Exception{
-        if (!this.handshakeCompleted){
-            throw new IllegalStateException("Error, no se realizo el handshake");
+        if (contenido == null || contenido.isEmpty()) {
+            throw new IllegalArgumentException("No se puede enviar un mensaje vacío.");
         }
+
+        // 2) Generar firma digital
+        byte[] firmaBytes = crypto.firmar(contenido.getBytes("UTF-8"));
+
+        // 3) Convertir firma a HEX (para poder concatenarla sin que se rompa el texto)
+        String firmaHex = crypto.bytesToHex(firmaBytes);
+
+        // 4) Armar paquete plano texto → "contenido|||firmaHex"
+        String textoPlano = contenido + "|||" + firmaHex;
+        byte[] textoPlanoBytes = textoPlano.getBytes("UTF-8");
+
+        // 5) Cifrar con AES
+        byte[] mensajeCifrado = crypto.encriptarConSimetrica(textoPlanoBytes);
+
+        // 6) Enviar por el canal seguro binario
+        enviarDatos(mensajeCifrado);
+    }
+
+    public Mensaje recibirMensaje() throws Exception {
+        if (!this.handshakeCompleted) {
+            throw new IllegalStateException("Error: no se realizó el handshake.");
+        }
+
+        // 1) Recibir paquete binario
         byte[] paqueteRecibido = getDatosEntrantes();
+        if (paqueteRecibido == null) {
+            return null; // cliente desconectado
+        }
+
+        // 2) Desencriptar con AES
         byte[] paqueteDesencriptado = crypto.desencriptarConSimetrica(paqueteRecibido);
         String textoPlano = new String(paqueteDesencriptado, "UTF-8");
+
+        // 3) Separar contenido y firma
         int separador = textoPlano.lastIndexOf("|||");
         if (separador == -1) {
-            throw new SecurityException("Mensaje no tiene firma (falta '|||').");
+            throw new SecurityException("Mensaje recibido sin firma (falta '|||').");
         }
-        String contenidoPlano = textoPlano.substring(0, separador).trim();
-        String firmaHex = textoPlano.substring(separador + 3).trim(); // lo que está después de |||
 
-        if (contenidoPlano.isEmpty() || firmaHex.isEmpty()) {
-            throw new SecurityException("Contenido o firma vacíos.");
+        String contenidoPlano = textoPlano.substring(0, separador).trim();
+        String firmaHex = textoPlano.substring(separador + 3).trim();
+
+        if (contenidoPlano.isEmpty()) {
+            throw new SecurityException("Contenido vacío en el mensaje.");
         }
+        if (firmaHex.isEmpty()) {
+            throw new SecurityException("Firma vacía en el mensaje.");
+        }
+
+        // 4) Convertir firma desde HEX a bytes
         byte[] firma = crypto.hexToBytes(firmaHex);
-        if (!crypto.verificarFirma(contenidoPlano.getBytes("UTF-8"), firma, clavePublicaRemota)) {
-            throw new SecurityException("Firma inválida. El mensaje fue alterado o el remitente no es auténtico.");
+
+        // 5) Verificar firma con la clave pública remota
+        boolean firmaValida = crypto.verificarFirma(
+                contenidoPlano.getBytes("UTF-8"),
+                firma,
+                clavePublicaRemota
+        );
+
+        if (!firmaValida) {
+            throw new SecurityException("Firma inválida: mensaje adulterado o remitente falso.");
         }
-        Mensaje mensaje = Mensaje.crearMensaje(contenidoPlano);
-        mensaje.firmar(this.crypto);
-        return mensaje;
+
+        // 6) Crear mensaje VALIDADO (sin volver a firmar)
+        return Mensaje.crearMensaje(contenidoPlano);
     }
+
 }

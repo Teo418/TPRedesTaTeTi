@@ -2,9 +2,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Mensaje {
-    private String comandoRaiz; // "listar", "invitar", "jugar"
+    private String comandoRaiz;
     private List<String> argumentos;
-    private byte[] firma;
+    private byte[] firma; // solo se usa al enviar
 
     public Mensaje(String comandoRaiz, List<String> argumentos) {
         this.comandoRaiz = comandoRaiz;
@@ -15,16 +15,8 @@ public class Mensaje {
         return comandoRaiz;
     }
 
-    public void setComandoRaiz(String comandoRaiz) {
-        this.comandoRaiz = comandoRaiz;
-    }
-
     public List<String> getArgumentos() {
         return argumentos;
-    }
-
-    public void setArgumentos(List<String> argumentos) {
-        this.argumentos = argumentos;
     }
 
     public byte[] getFirma() {
@@ -35,51 +27,41 @@ public class Mensaje {
         this.firma = firma;
     }
 
-    public String getContenidoMensaje(){
-        StringBuilder sb = new StringBuilder(this.comandoRaiz);
-        if(this.argumentos != null && !this.argumentos.isEmpty()){
-            for (String argumento : this.argumentos){
-                sb.append(" ").append(argumento);
+    // Construye el texto "comando arg1 arg2 ..."
+    public String getContenidoMensaje() {
+        StringBuilder sb = new StringBuilder(comandoRaiz);
+        if (argumentos != null && !argumentos.isEmpty()) {
+            for (String arg : argumentos) {
+                sb.append(" ").append(arg);
             }
         }
-       return sb.toString();
+        return sb.toString();
     }
-    public void firmar(Encriptacion encriptacion) throws Exception{
-        String mensaje = getContenidoMensaje();
-        byte[] mensajeBytes = mensaje.getBytes("UTF-8");
-        this.firma = encriptacion.firmar(mensajeBytes);
+
+    // NO reconstruye ni concatena firma: solo firma el contenido
+    public void firmar(Encriptacion encriptacion) throws Exception {
+        this.firma = encriptacion.firmar(getContenidoMensaje().getBytes("UTF-8"));
     }
-    public boolean verificarFirma(byte[] clavePublicaEmisor, Encriptacion encriptacion) throws Exception{
-        if(this.firma == null){
-            throw new Exception("Error, el mensaje no tiene firma");
+
+    public boolean verificarFirma(byte[] clavePublicaEmisor, Encriptacion encriptacion) throws Exception {
+        if (this.firma == null || this.firma.length == 0) {
+            throw new IllegalStateException("El mensaje no tiene firma.");
         }
-        String contenido = getContenidoMensaje();
-        byte[] contenidoBytes = contenido.getBytes("UTF-8");
-        return encriptacion.verificarFirma(contenidoBytes, this.firma, clavePublicaEmisor);
+        return encriptacion.verificarFirma(
+                getContenidoMensaje().getBytes("UTF-8"),
+                this.firma,
+                clavePublicaEmisor
+        );
     }
+
+    // Reconstruye un mensaje desde el texto plano "comando arg1 arg2"
     public static Mensaje crearMensaje(String input) {
         String[] parts = input.trim().split(" ");
         if (parts.length == 0) return new Mensaje("", Arrays.asList());
 
         String comandoRaiz = parts[0];
-        // Los argumentos son el resto de las partes (desde el índice 1)
         List<String> argumentos = Arrays.asList(Arrays.copyOfRange(parts, 1, parts.length));
 
         return new Mensaje(comandoRaiz, argumentos);
-    }
-    // Para enviar el objeto serializado como un String (comando + args ||| firma)
-    @Override
-    public String toString() {
-        String comandoConArgs = comandoRaiz;
-        if (argumentos != null) {
-            for (String arg : argumentos) {
-                comandoConArgs += " " + arg;
-            }
-        }
-        return comandoConArgs + "|||";
-    }
-
-    public byte[] getBytes(){
-        return this.toString().getBytes();
     }
 }

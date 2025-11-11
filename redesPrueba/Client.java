@@ -12,7 +12,7 @@ public class Client {
 
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("IP_DEL_SERVER", 5000);
+            Socket socket = new Socket(args[0], Integer.parseInt(args[1]));
 
             CanalSeguro canalSeguro = new CanalSeguro(
                     socket.getInputStream(),
