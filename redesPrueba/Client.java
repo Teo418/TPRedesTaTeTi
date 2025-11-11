@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
+import java.util.Scanner;
 
 public class Client {
     private static BufferedReader teclado;//para leer lo que el usuario escribe
@@ -9,43 +10,54 @@ public class Client {
     private static Socket socket;//conexión con el servidor
     private static CanalSeguro canalSeguro;
 
-    public static void main(String[] args) throws IOException {
-        teclado = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print("IP del servidor: ");
-        ip = teclado.readLine();
-        System.out.print("Puerto: ");
-        puerto = Integer.parseInt(teclado.readLine());//para poder pasar a ints
-        socket = new Socket(ip, puerto);
+    public static void main(String[] args) {
         try {
-            canalSeguro = new CanalSeguro(socket.getInputStream(), socket.getOutputStream());
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e.getMessage());
-        }
-        try {
-            canalSeguro.handshakeCliente();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());;
-        }
-        Thread lector = new Thread(() -> {
-            try {
-                Mensaje mensajeRecibido;
-                while ((mensajeRecibido = canalSeguro.recibirMensaje())  != null) {
-                    System.out.println("Mensaje entrante: " + mensajeRecibido.toString());
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage() + "<<<>>> Conexión cerrada");
-            }
-        });
-        lector.start();
+            Socket socket = new Socket("IP_DEL_SERVER", 5000);
 
-        String input;
-        while ((input= teclado.readLine())  != null) {
-            Mensaje mensajeAEnviar = Mensaje.crearMensaje(input);
-            try {
-                canalSeguro.enviarMensaje(mensajeAEnviar);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
+            CanalSeguro canalSeguro = new CanalSeguro(
+                    socket.getInputStream(),
+                    socket.getOutputStream()
+            );
+
+            // 1) Handshake
+            canalSeguro.handshakeCliente();
+
+            Scanner scanner = new Scanner(System.in);
+
+            // 2) Esperar orden del servidor
+            Mensaje msg = canalSeguro.recibirMensaje();
+            if (!msg.getContenidoMensaje().equals("PEDIR_NOMBRE"))
+                throw new IllegalStateException("El servidor no pidió el nombre correctamente.");
+
+            // 3) Enviar nombre
+            System.out.print("Ingrese su nombre: ");
+            String nombre = scanner.nextLine();
+            canalSeguro.enviarMensaje(Mensaje.crearMensaje(nombre));
+
+            // 4) Esperar confirmación o rechazo
+            Mensaje respuesta = canalSeguro.recibirMensaje();
+
+            while (respuesta.getContenidoMensaje().equals("NOMBRE_EN_USO")) {
+                System.out.println("Ese nombre está en uso. Intente otro:");
+                nombre = scanner.nextLine();
+                canalSeguro.enviarMensaje(Mensaje.crearMensaje(nombre));
+                respuesta = canalSeguro.recibirMensaje();
             }
+
+            if (!respuesta.getContenidoMensaje().equals("OK"))
+                throw new IllegalStateException("Error inesperado en autenticación.");
+
+            System.out.println("Conectado correctamente como: " + nombre);
+
+            // A partir de acá ya podés enviar y recibir mensajes del chat normalmente
+            // Ejemplo:
+            while (true) {
+                String texto = scanner.nextLine();
+                canalSeguro.enviarMensaje(Mensaje.crearMensaje(texto));
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error en cliente: " + e.getMessage());
         }
     }
 }

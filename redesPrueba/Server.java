@@ -11,7 +11,7 @@ public class Server {
             return;
         }
         try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[0]))){
-            System.out.println("Servidor iniciado en puerto 5000...");
+            System.out.println("Servidor iniciado en puerto " + args[0] + "...");
             while (true) {
                 Socket socket = serverSocket.accept();// esto es un metodo bloqueante que me ayuda a
                 // esperar a que se conecta un cliente por eso el while(true),
