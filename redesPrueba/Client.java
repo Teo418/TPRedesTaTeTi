@@ -1,19 +1,16 @@
 import java.io.*;
 import java.net.*;
-import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
 public class Client {
-    private static BufferedReader teclado;//para leer lo que el usuario escribe
-    private static String ip;
-    private static int puerto;
-    private static Socket socket;//conexión con el servidor
-    private static CanalSeguro canalSeguro;
-
     public static void main(String[] args) {
+        if (args.length < 2) {
+            System.out.println("Uso: java Client <IP> <PUERTO>");
+            return;
+        }
+
         try {
             Socket socket = new Socket(args[0], Integer.parseInt(args[1]));
-
             CanalSeguro canalSeguro = new CanalSeguro(
                     socket.getInputStream(),
                     socket.getOutputStream()
@@ -24,10 +21,11 @@ public class Client {
 
             Scanner scanner = new Scanner(System.in);
 
-            // 2) Esperar orden del servidor
+            // 2) Esperar pedido de nombre
             Mensaje msg = canalSeguro.recibirMensaje();
-            if (!msg.getContenidoMensaje().equals("PEDIR_NOMBRE"))
+            if (msg == null || !msg.getContenidoMensaje().equals("PEDIR_NOMBRE")) {
                 throw new IllegalStateException("El servidor no pidió el nombre correctamente.");
+            }
 
             // 3) Enviar nombre
             System.out.print("Ingrese su nombre: ");
@@ -36,42 +34,49 @@ public class Client {
 
             // 4) Esperar confirmación o rechazo
             Mensaje respuesta = canalSeguro.recibirMensaje();
-
-            while (respuesta.getContenidoMensaje().equals("NOMBRE_EN_USO")) {
+            while (respuesta != null && respuesta.getContenidoMensaje().equals("NOMBRE_EN_USO")) {
                 System.out.println("Ese nombre está en uso. Intente otro:");
                 nombre = scanner.nextLine();
                 canalSeguro.enviarMensaje(Mensaje.crearMensaje(nombre));
                 respuesta = canalSeguro.recibirMensaje();
             }
 
-            if (!respuesta.getContenidoMensaje().equals("OK"))
+            if (respuesta == null || !respuesta.getContenidoMensaje().equals("OK")) {
                 throw new IllegalStateException("Error inesperado en autenticación.");
+            }
 
             System.out.println("Conectado correctamente como: " + nombre);
 
-            // A partir de acá ya podés enviar y recibir mensajes del chat normalmente
-            // Ejemplo:
+            // 🔹 Lanzar hilo para escuchar mensajes del servidor
+            Thread listener = new Thread(() -> {
+                try {
+                    while (true) {
+                        Mensaje recibido = canalSeguro.recibirMensaje();
+                        if (recibido != null) {
+                            System.out.println("[Servidor]: " + recibido.getContenidoMensaje());
+                        } else {
+                            System.out.println("Servidor desconectado.");
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("[CLIENTE] Conexión cerrada: " + e.getMessage());
+                }
+            });
+            listener.start();
+
+            // 🔹 Hilo principal: leer y enviar mensajes al servidor
             while (true) {
                 String texto = scanner.nextLine();
+                if (texto.equalsIgnoreCase("salir")) break;
                 canalSeguro.enviarMensaje(Mensaje.crearMensaje(texto));
             }
+
+            socket.close();
+            System.out.println("Cliente desconectado.");
 
         } catch (Exception e) {
             System.out.println("Error en cliente: " + e.getMessage());
         }
     }
 }
-
-/*public void run() {
-        String serverMsg;
-        try {
-            while ((serverMsg = mensajesEntrada.readLine()) != null) {
-                System.out.println(serverMsg);
-            }
-        } catch (IOException e) {
-            System.out.println("Conexión cerrada.");
-        }
-}
-Thread lector = new Thread(new LectorRunnable(mensajesEntrada));
-lector.start();
-*/
