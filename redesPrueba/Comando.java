@@ -57,7 +57,7 @@ public class Comando {
         List<String> args = mensaje.getArgumentos();
         if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: invitar <usuario>");
 
-        String oponente = args.getFirst().trim().toLowerCase();
+        String oponente = args.get(1).trim().toLowerCase();
         ClientHandler invited = Server.clients.get(oponente);
 
         if (invited == null) {

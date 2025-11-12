@@ -39,7 +39,7 @@ public class ClientHandler extends Thread {
                 nombreMsg = canalSeguro.recibirMensaje();
                 this.name = nombreMsg.getContenidoMensaje();
             }
-
+            this.name = nombreMsg.getContenidoMensaje().trim().toLowerCase();
             // 4) Registrar cliente en el servidor
             Server.clients.put(name, this);
             System.out.println("[SERVER] Cliente identificado como: " + name);
