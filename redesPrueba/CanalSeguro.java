@@ -60,7 +60,7 @@ public class CanalSeguro {
         return null;
     }
     public void confirmacion() throws IOException{
-        enviarDatos("READY".getBytes());
+        enviarDatos("READY".getBytes("UTF-8"));
     }
 
     public void handshakeServidor() throws Exception {

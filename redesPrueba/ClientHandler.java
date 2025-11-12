@@ -64,7 +64,12 @@ public class ClientHandler extends Thread {
             System.out.println("[SERVER] Cliente removido: " + name);
         }
     }
-
+    public Socket getSocket() {
+        return socket;
+    }
+    public void setCanalSeguro(CanalSeguro canalSeguro) {
+        this.canalSeguro = canalSeguro;
+    }
     public CanalSeguro getCanalSeguro() {
         return canalSeguro;
     }

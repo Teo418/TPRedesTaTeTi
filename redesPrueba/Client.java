@@ -71,7 +71,6 @@ public class Client {
         } catch (IOException e) {
             System.out.println("Conexión cerrada.");
         }
-    }
 }
 Thread lector = new Thread(new LectorRunnable(mensajesEntrada));
 lector.start();
