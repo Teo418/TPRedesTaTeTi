@@ -4,6 +4,7 @@ import java.util.*;
 
 public class Server {
     static Map<String, ClientHandler> clients = Collections.synchronizedMap(new HashMap<>());
+    static Juego controladorJuegoGlobal = new Juego();
     //me permite "bloquear el hasmap", me sirve para modificar la info del hash con un cliente, es decir que no haya dos cliente modificando la info al mismo tiempo sino se puede corromper el codigo(chat gpt)
     public static void main(String[] args) throws IOException {
         if(args.length < 1){

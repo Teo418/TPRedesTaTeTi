@@ -27,7 +27,7 @@ public class Sesion {
             Mensaje msg = Mensaje.crearMensaje(contenido);
             jugador.getCanalSeguro().enviarMensaje(msg);
         } catch (Exception e) {
-            System.out.println("[SERVER] Error al enviar mensaje a " + jugador.getName() + ": " + e.getMessage());
+            System.out.println("[SERVER] Error al enviar mensaje a " + jugador.getNombreCliente() + ": " + e.getMessage());
         }
     }
 
@@ -72,18 +72,19 @@ public class Sesion {
         enviarMensajeSeguro(playerO, tablero);
     }
 
-    public void playMove(ClientHandler player, List<String> argumentos) throws Exception {
-        if (argumentos.size() < 3) {
+
+    public boolean playMove(ClientHandler player, List<String> argumentos) throws Exception {
+        if (argumentos.size() < 2) { // <- Recordá el fix anterior
             throw new FaltanArgumentosExcepcion("Usá: jugar fila columna");
         }
 
-        int row = Integer.parseInt(argumentos.get(1));
-        int col = Integer.parseInt(argumentos.get(2));
+        int row = Integer.parseInt(argumentos.get(0)); // <- Recordá el fix anterior
+        int col = Integer.parseInt(argumentos.get(1)); // <- Recordá el fix anterior
 
         char symbol = (player == playerX) ? 'X' : 'O';
         if (symbol != currentTurn) {
             enviarMensajeSeguro(player, "No es tu turno.");
-            return;
+            return false; // No terminó el juego, pero fue un turno inválido
         }
 
         if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ') {
@@ -94,14 +95,23 @@ public class Sesion {
         sendBoard();
 
         if (checkBoard(player)) {
-            return; // terminó el juego
+            return true;
         }
 
         currentTurn = (currentTurn == 'X') ? 'O' : 'X';
         enviarMensajeSeguro(getOpponent(player), "Tu turno. Usá: jugar fila columna");
+
+        return false;
     }
 
     private ClientHandler getOpponent(ClientHandler player) {
         return (player == playerX) ? playerO : playerX;
+    }
+    public ClientHandler getPlayerX() {
+        return playerX;
+    }
+
+    public ClientHandler getPlayerO() {
+        return playerO;
     }
 }

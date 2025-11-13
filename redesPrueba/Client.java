@@ -47,13 +47,20 @@ public class Client {
 
             System.out.println("Conectado correctamente como: " + nombre);
 
-            // 🔹 Lanzar hilo para escuchar mensajes del servidor
             Thread listener = new Thread(() -> {
                 try {
                     while (true) {
                         Mensaje recibido = canalSeguro.recibirMensaje();
                         if (recibido != null) {
-                            System.out.println("[Servidor]: " + recibido.getContenidoMensaje());
+
+                            String contenido = recibido.getContenidoMensaje();
+
+                            if (contenido.startsWith("\n")) {
+                                System.out.print(contenido);
+                            } else {
+                                System.out.println("[Servidor]: " + contenido);
+                            }
+
                         } else {
                             System.out.println("Servidor desconectado.");
                             break;

@@ -6,6 +6,10 @@ public class Comando {
     private final ClientHandler client;
     private final Juego controladorJuego;
 
+    public Comando(ClientHandler client, Juego controladorJuego) {
+        this.client = client;
+        this.controladorJuego = controladorJuego; // Asignar la instancia compartida
+    }
     public Comando(ClientHandler client) {
         this.client = client;
         this.controladorJuego = new Juego();
@@ -36,7 +40,7 @@ public class Comando {
             Mensaje respuesta = Mensaje.crearMensaje(contenido);
             client.getCanalSeguro().enviarMensaje(respuesta);
         } catch (Exception e) {
-            System.out.println("[SERVER] Error al enviar mensaje a " + client.getName() + ": " + e.getMessage());
+            System.out.println("[SERVER] Error al enviar mensaje a " + client.getNombreCliente() + ": " + e.getMessage());
         }
     }
 
@@ -44,7 +48,7 @@ public class Comando {
         try {
             StringBuilder sb = new StringBuilder("Usuarios conectados:");
             for (String n : Server.clients.keySet()) {
-                if (!n.equals(client.getName())) sb.append("\n> ").append(n);
+                if (!n.equals(client.getNombreCliente())) sb.append("\n> ").append(n);
             }
             Mensaje respuesta = Mensaje.crearMensaje(sb.toString());
             client.getCanalSeguro().enviarMensaje(respuesta);
@@ -57,7 +61,7 @@ public class Comando {
         List<String> args = mensaje.getArgumentos();
         if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: invitar <usuario>");
 
-        String oponente = args.getFirst().trim().toLowerCase();
+        String oponente = args.getFirst().trim();
         ClientHandler invited = Server.clients.get(oponente);
 
         if (invited == null) {
@@ -65,7 +69,7 @@ public class Comando {
             return;
         }
 
-        if (oponente.equals(client.getName().toLowerCase())) {
+        if (oponente.equals(client.getNombreCliente())) {
             enviarMensajeSeguro("No te podés invitar a vos mismo.");
             return;
         }
@@ -73,7 +77,7 @@ public class Comando {
         // Enviar invitación cifrada al oponente
         try {
             invited.getCanalSeguro().enviarMensaje(
-                    Mensaje.crearMensaje(client.getName() + " quiere jugar. Escribí 'aceptar " + client.getName() + "' para empezar.")
+                    Mensaje.crearMensaje(client.getNombreCliente() + " quiere jugar. Escribí 'aceptar " + client.getNombreCliente() + "' para empezar.")
             );
             enviarMensajeSeguro("Invitación enviada a " + oponente);
         } catch (Exception e) {
@@ -85,7 +89,7 @@ public class Comando {
         List<String> args = mensaje.getArgumentos();
         if (args.isEmpty()) throw new FaltanArgumentosExcepcion("Usá: aceptar <usuario>");
 
-        String inviterName = args.get(0);
+        String inviterName = args.getFirst();
         ClientHandler inviter = Server.clients.get(inviterName);
 
         if (inviter == null) {

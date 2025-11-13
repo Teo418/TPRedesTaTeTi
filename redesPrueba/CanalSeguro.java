@@ -156,7 +156,7 @@ public class CanalSeguro {
             throw new SecurityException("Mensaje recibido sin firma (falta '|||').");
         }
 
-        String contenidoPlano = textoPlano.substring(0, separador).trim();
+        String contenidoPlano = textoPlano.substring(0, separador);
         String firmaHex = textoPlano.substring(separador + 3).trim();
 
         if (contenidoPlano.isEmpty()) {

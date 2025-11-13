@@ -1,14 +1,14 @@
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
     private CanalSeguro canalSeguro;
-    private String name;
+    private String nombreCliente;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
+        this.nombreCliente = null; // Inicialmente null
     }
 
     @Override
@@ -31,24 +31,30 @@ public class ClientHandler extends Thread {
             if (nombreMsg == null)
                 throw new IOException("No se recibió nombre del cliente.");
 
-            this.name = nombreMsg.getContenidoMensaje();
+            String nombrePropuesto = nombreMsg.getContenidoMensaje().trim();
 
             // 3) Confirmamos que el nombre no esté repetido
-            while (Server.clients.containsKey(name)) {
-                canalSeguro.enviarMensaje(Mensaje.crearMensaje("NOMBRE_EN_USO"));
-                nombreMsg = canalSeguro.recibirMensaje();
-                this.name = nombreMsg.getContenidoMensaje();
-            }
-            this.name = nombreMsg.getContenidoMensaje().trim().toLowerCase();
-            // 4) Registrar cliente en el servidor
-            Server.clients.put(name, this);
-            System.out.println("[SERVER] Cliente identificado como: " + name);
+            synchronized (Server.clients) {
+                while (Server.clients.containsKey(nombrePropuesto)) {
+                    canalSeguro.enviarMensaje(Mensaje.crearMensaje("NOMBRE_EN_USO"));
+                    nombreMsg = canalSeguro.recibirMensaje();
+                    nombrePropuesto = nombreMsg.getContenidoMensaje().trim();
+                }
 
-            // 5) Avisar al cliente que todo está OK
+                // 4) Asignar el nombre ANTES de registrar en el mapa
+                this.nombreCliente = nombrePropuesto;
+
+                // 5) Registrar cliente en el servidor
+                Server.clients.put(nombreCliente, this);
+            }
+
+            System.out.println("[SERVER] Cliente identificado como: " + nombreCliente);
+
+            // 6) Avisar al cliente que todo está OK
             canalSeguro.enviarMensaje(Mensaje.crearMensaje("OK"));
 
-            // 6) Procesar mensajes que envía el cliente
-            Comando commandProcessor = new Comando(this);
+            // 7) Procesar mensajes que envía el cliente
+            Comando commandProcessor = new Comando(this, Server.controladorJuegoGlobal);
             Mensaje mensaje;
 
             while ((mensaje = canalSeguro.recibirMensaje()) != null) {
@@ -56,21 +62,41 @@ public class ClientHandler extends Thread {
             }
 
         } catch (Exception e) {
-            System.out.println("[SERVER] Cliente " + name + " se desconectó. Motivo: " + e.getMessage());
+            System.out.println("[SERVER] Cliente " +
+                    (nombreCliente != null ? nombreCliente : "desconocido") +
+                    " se desconectó. Motivo: " + e.getMessage());
 
         } finally {
             try { socket.close(); } catch (IOException ignored) {}
-            Server.clients.remove(name);
-            System.out.println("[SERVER] Cliente removido: " + name);
+            if (nombreCliente != null) {
+                Server.clients.remove(nombreCliente);
+                System.out.println("[SERVER] Cliente removido: " + nombreCliente);
+            }
         }
     }
+
+    public String getNombreCliente() {
+        return this.nombreCliente;
+    }
+
+    public void setNombreCliente(String nombreCliente) {
+        this.nombreCliente = nombreCliente;
+    }
+
     public Socket getSocket() {
         return socket;
     }
+
     public void setCanalSeguro(CanalSeguro canalSeguro) {
         this.canalSeguro = canalSeguro;
     }
+
     public CanalSeguro getCanalSeguro() {
         return canalSeguro;
+    }
+
+    @Override
+    public String toString() {
+        return nombreCliente != null ? nombreCliente : "Usuario sin nombre";
     }
 }

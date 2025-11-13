@@ -29,6 +29,10 @@ public class Mensaje {
 
     // Construye el texto "comando arg1 arg2 ..."
     public String getContenidoMensaje() {
+        if (this.argumentos == null || this.argumentos.isEmpty()) {
+            return this.comandoRaiz;
+        }
+
         StringBuilder sb = new StringBuilder(comandoRaiz);
         if (argumentos != null && !argumentos.isEmpty()) {
             for (String arg : argumentos) {
@@ -56,12 +60,13 @@ public class Mensaje {
 
     // Reconstruye un mensaje desde el texto plano "comando arg1 arg2"
     public static Mensaje crearMensaje(String input) {
+        if (input.startsWith("\n") || input.contains("\n")) {
+            return new Mensaje(input, Arrays.asList());
+        }
         String[] parts = input.trim().split(" ");
         if (parts.length == 0) return new Mensaje("", Arrays.asList());
-
         String comandoRaiz = parts[0];
         List<String> argumentos = Arrays.asList(Arrays.copyOfRange(parts, 1, parts.length));
-
         return new Mensaje(comandoRaiz, argumentos);
     }
 }
